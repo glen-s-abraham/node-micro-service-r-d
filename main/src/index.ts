@@ -10,11 +10,18 @@ let amqpChannel: Channel;
 amqplib.connect('amqp://admin:password@localhost:5672', (err: any, conn: any) => {
     if (err) throw err;
     if (!conn) console.log('Not connected to rabbitmq')
-    else
+    else {
         conn.createChannel((err: any, ch: any) => {
             if (err) throw new err;
             amqpChannel = ch;
+            if (amqpChannel) {
+                amqpChannel.assertQueue('hello', { durable: false });
+                amqpChannel.consume('hello', (data) => console.log(data?.content.toString()));
+            }
         })
+        
+    }
+
 })
 
 
@@ -30,7 +37,6 @@ app.use(cors({
 
 app.get("/api/products", async (req: Request, res: Response) => {
     res.status(200).json(await Product.find());
-    amqpChannel.sendToQueue('hello', Buffer.from('hello'));
 })
 
 app.get("/api/products/:id", async (req: Request, res: Response) => {
@@ -55,10 +61,7 @@ app.delete("/api/products/:id", async (req: Request, res: Response) => {
     res.status(200).json(await Product.findByIdAndDelete(req.params.id));
 })
 
-mongoose.connect("mongodb://localhost:27017/ms_admin");
+mongoose.connect("mongodb://localhost:27017/ms_main");
 mongoose.connection.on('error', (err) => console.error(err));
-mongoose.connection.once('open', () => {
-
-})
-app.listen(8000, () => console.log('listening on port 8000'))
+app.listen(8001, () => console.log('listening on port 8001'))
 
